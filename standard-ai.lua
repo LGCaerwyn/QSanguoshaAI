@@ -1067,6 +1067,7 @@ local jijiang_skill = {}
 jijiang_skill.name = "jijiang"
 table.insert(sgs.ai_skills, jijiang_skill)
 jijiang_skill.getTurnUseCard = function(self)
+	if not self.player:hasLordSkill("jijiang") then return end
 	local lieges = self.room:getLieges("shu", self.player)
 	if lieges:isEmpty() then return end
 	local has_friend
@@ -2010,6 +2011,8 @@ end
 
 sgs.ai_card_intention.LiuliCard = function(self, card, from, to)
 	sgs.ai_liuli_effect = true
+	if not hasExplicitRebel(self.room) then sgs.ai_liuli_user = from
+	else sgs.ai_liuli_user = nil end
 end
 
 function sgs.ai_slash_prohibit.liuli(self, from, to, card)
@@ -2454,7 +2457,7 @@ function SmartAI:findLijianTarget(card_name, use)
 		local zhugeliang_kongcheng, xunyu
 
 		for _, enemy in ipairs(self.enemies) do
-			if enemy:isMale() and not self:hasSkills("wuyan|noswuyan", enemy) then
+			if enemy:isMale() and not enemy:hasSkills("wuyan|noswuyan") then
 				if enemy:hasSkill("kongcheng") and enemy:isKongcheng() then zhugeliang_kongcheng = enemy
 				elseif enemy:hasSkill("jieming") then xunyu = enemy
 				else

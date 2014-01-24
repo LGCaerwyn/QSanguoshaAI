@@ -223,3 +223,32 @@ function sgs.Card_Parse(str)
 	end
 	return cardparse(str)
 end
+function sgs.broadcastRole(role_type)
+	role = role_type == "r" and "rebel"
+			or role_type == "R" and "renegade"
+			or role_type == "l" and "loyalist"
+	for _, p in sgs.qlist(global_room:getAlivePlayers()) do
+		if role and p:getRole() == role then global_room:broadcastProperty(p, "role")
+		elseif not role then global_room:broadcastProperty(p, "role") end
+	end
+	sgs.evaluateAlivePlayersRole()
+end
+
+function sgs.printFEList()
+	global_room:writeToConsole("")
+	for _, p in sgs.qlist(global_room:getAlivePlayers()) do
+		global_room:writeToConsole("====  " .. p:getGeneralName() .. "  Role::" .. p:getRole() .. "  ====")
+		local sgsself = sgs.ais[p:objectName()]
+		sgsself:updatePlayers()
+		local msge = "enemies:"
+		for _, player in ipairs(sgsself.enemies) do
+			msge = msge .. player:getGeneralName() .. ", "
+		end
+		global_room:writeToConsole(msge)
+		local msgf = "friends:"
+		for _, player in ipairs(sgsself.friends) do
+			msgf = msgf .. player:getGeneralName() .. ", "
+		end
+		global_room:writeToConsole(msgf)
+	end
+end

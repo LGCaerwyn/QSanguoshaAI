@@ -119,7 +119,7 @@ sgs.ai_chaofeng.yuanshu = 3
 sgs.ai_skill_invoke.danlao = function(self, data)
 	local effect = data:toCardUse()
 	local current = self.room:getCurrent()
-	if effect.card:isKindOf("GodSalvation") and self.player:isWounded() then
+	if effect.card:isKindOf("GodSalvation") and self.player:isWounded() or effect.card:isKindOf("ExNihilo") then
 		return false
 	elseif effect.card:isKindOf("AmazingGrace") and
 		(self.player:getSeat() - current:getSeat()) % (global_room:alivePlayerCount()) < global_room:alivePlayerCount()/2 then
@@ -651,8 +651,8 @@ sgs.ai_skill_cardask["@yanyu-discard"] = function(self, data)
 		local ex_nihilo, savage_assault, archery_attack
 		for _, card in ipairs(cards) do
 			if card:isKindOf("ExNihilo") then ex_nihilo = card
-			elseif card:isKindOf("SavageAssault") then savage_assault = card
-			elseif card:isKindOf("ArcheryAttack") then archery_attack = card
+			elseif card:isKindOf("SavageAssault") and not current:hasSkills("noswuyan|wuyan") then savage_assault = card
+			elseif card:isKindOf("ArcheryAttack") and not current:hasSkills("noswuyan|wuyan") then archery_attack = card
 			end
 		end
 		if savage_assault and self:getAoeValue(savage_assault) <= 0 then savage_assault = nil end
@@ -700,8 +700,8 @@ sgs.ai_skill_cardask["@yanyu-discard"] = function(self, data)
 	else
 		local throw_trick
 		local aoe_type
-		if getCardsNum("ArcheryAttack", current, self.player) >= 1 then aoe_type = "archery_attack" end
-		if getCardsNum("SavageAssault", current, self.player) >= 1 then aoe_type = "savage_assault" end
+		if getCardsNum("ArcheryAttack", current, self.player) >= 1 and not current:hasSkills("noswuyan|wuyan") then aoe_type = "archery_attack" end
+		if getCardsNum("SavageAssault", current, self.player) >= 1 and not current:hasSkills("noswuyan|wuyan") then aoe_type = "savage_assault" end
 		if aoe_type then
 			local aoe = sgs.Sanguosha:cloneCard(aoe_type)
 			if self:getAoeValue(aoe, current) > 0 then throw_trick = true end

@@ -519,3 +519,14 @@ sgs.ai_skill_cardask["@niluan-slash"] = function(self, data, pattern, target, ta
 	end
 	return "."
 end
+
+sgs.ai_skill_invoke.renwang = function(self, data)
+	local use = data:toCardUse()
+	if self:isFriend(use.from) then
+		local id = self:askForCardChosen(use.from, "he", "dummy", sgs.Card_MethodDiscard)
+		return self:needToThrowArmor(use.from) and id == use.from:getArmor():getEffectiveId()
+	elseif not self:doNotDiscard(use.from, "he") and use.from:getCardCount() > 0 then
+		return true
+	end
+	return
+end

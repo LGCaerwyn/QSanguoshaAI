@@ -129,7 +129,7 @@ sgs.ai_skill_use_func.LihunCard = function(card,use,self)
 		if not target and (self:hasCrossbowEffect() or self:getCardsNum("Crossbow") > 0) then
 			local slash = self:getCard("Slash") or sgs.Sanguosha:cloneCard("slash")
 			for _, enemy in ipairs(self.enemies) do
-				if enemy:isMale() and self:slashIsEffective(slash, enemy) and self.player:distanceTo(enemy) == 1
+				if enemy:isMale() and not enemy:isKongcheng() and self:slashIsEffective(slash, enemy) and self.player:distanceTo(enemy) == 1
 					and not enemy:hasSkills("fenyong|zhichi|fankui|vsganglie|ganglie|neoganglie|enyuan|nosenyuan|langgu|guixin|kongcheng")
 					and self:getCardsNum("Slash") + getKnownCard(enemy, self.player, "Slash") >= 3 then
 					target = enemy
@@ -1181,6 +1181,7 @@ local function need_huangen(self, who)
 			if self:isWeak(who) then return true end
 			if self:hasSkills(sgs.masochism_skill, who) then return true end
 		end
+		if card:isKindOf("ExNihilo") then return true end
 		return false
 	elseif self:isFriend(who) then
 		if self:hasSkills("noswuyan", who) and from:objectName() ~= who:objectName() then return true end

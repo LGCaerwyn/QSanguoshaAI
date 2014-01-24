@@ -96,7 +96,7 @@ function sgs.ai_armor_value.Vine(player, self)
 	if player:isChained() and (not self:isGoodChainTarget(player, self.player, nil, nil, fslash) or not self:isGoodChainTarget(player, self.player, nil, nil, tslash)) then return -2 end
 	
 	for _, enemy in ipairs(self:getEnemies(player)) do
-		if (enemy:canSlash(player) and enemy:hasWeapon("Fan")) or self:hasSkills("huoji|longhun|shaoying|zonghuo|wuling", enemy)
+		if (enemy:canSlash(player) and enemy:hasWeapon("Fan")) or enemy:hasSkills("huoji|longhun|shaoying|zonghuo|wuling")
 		  or (enemy:hasSkill("yeyan") and enemy:getMark("@flame") > 0) then return -2 end
 		if getKnownCard(enemy, player, "FireSlash", true) >= 1 or getKnownCard(enemy, player, "FireAttack", true) >= 1 or
 			getKnownCard(enemy, player, "Fan") >= 1 then return -2 end
@@ -139,7 +139,7 @@ function SmartAI:shouldUseAnaleptic(target, slash)
 	end
 
 	if getKnownCard(target, self.player, "Jink", true, "he") >= 1 and not (self:getOverflow() > 0 and self:getCardsNum("Analeptic") > 1) then return false end
-	return self:getCardsNum("Analeptic") > 1 or getCardsNum("Jink", target) < 1 or sgs.card_lack[target:objectName()]["Jink"] == 1
+	return self:getCardsNum("Analeptic") > 1 or getCardsNum("Jink", target) < 1 or sgs.card_lack[target:objectName()]["Jink"] == 1 or self:getOverflow() > 0
 end
 
 function SmartAI:useCardAnaleptic(card, use)
@@ -367,14 +367,14 @@ function SmartAI:isGoodChainTarget(who, source, nature, damagecount, slash)
 		if dmg and nature == sgs.DamageStruct_Fire then
 			if target:hasArmorEffect("Vine") then dmg = dmg + 1 end
 			if target:getMark("@gale") > 0 then dmg = dmg + 1 end
-			end
+		end
 		if self:cantbeHurt(target, source, damagecount) then newvalue = newvalue - 100 end
 		if damagecount + (dmg or 0) >= target:getHp() then
 			newvalue = newvalue - 2
-			if target:isLord() and not self:isEnemy(target, source) then killlord = true end
-			if self:isEnemy(target, source) then kills = kills + 1 end
+			if target:isLord() and not self:isEnemy(target) then killlord = true end
+			if self:isEnemy(target) then kills = kills + 1 end
 		else
-			if self:isEnemy(target, source) and source:getHandcardNum() < 2 and target:hasSkills("ganglie|neoganglie") and source:getHp() == 1
+			if self:isEnemy(target) and source:getHandcardNum() < 2 and target:hasSkills("ganglie|neoganglie") and source:getHp() == 1
 				and self:damageIsEffective(source, nil, target) and peach_num < 1 then newvalue = newvalue - 100 end
 			if target:hasSkill("vsganglie") then
 				local can
@@ -382,7 +382,7 @@ function SmartAI:isGoodChainTarget(who, source, nature, damagecount, slash)
 					if t:getHp() == 1 and t:getHandcardNum() < 2 and self:damageIsEffective(t, nil, target) and peach_num < 1 then
 						if t:isLord() then
 							newvalue = newvalue - 100
-							if not self:isEnemy(t, source) then killlord = true end
+							if not self:isEnemy(t) then killlord = true end
 						end
 						can = true
 					end
@@ -410,7 +410,7 @@ function SmartAI:isGoodChainTarget(who, source, nature, damagecount, slash)
 	for _, player in sgs.qlist(self.room:getAllPlayers()) do
 		if player:objectName() ~= who:objectName() and player:isChained() and self:damageIsEffective(player, nature, source) then
 			local getvalue = getChainedPlayerValue(player, 0)
-			if kills == #self:getEnemies(source) and not killlord and sgs.getDefenseSlash(player, self) < 2 then
+			if kills == #self.enemies and not killlord and sgs.getDefenseSlash(player, self) < 2 then
 				if slash then self.room:setCardFlag(slash, "AIGlobal_KillOff") end
 				return true
 			end
@@ -425,11 +425,11 @@ function SmartAI:isGoodChainTarget(who, source, nature, damagecount, slash)
 		end
 	end
 	
-	if killlord and sgs.evaluatePlayerRole(source) == "rebel" then return true end
+	if killlord and self.role == "rebel" and not sgs.GetConfig("EnableHegemony", false) then return true end
 
 	if slash and F_count == 1 and E_count == 1 and the_enemy and the_enemy:isKongcheng() and the_enemy:getHp() == 1 then
 		for _, c in ipairs(self:getCards("Slash")) do
-			if not c:isKindOf("NatureSlash") and self:slashProhibit(slash, the_enemy, source) then return end
+			if not c:isKindOf("NatureSlash") and not self:slashProhibit(c, the_enemy, source) then return end
 		end
 	end
 	
@@ -688,11 +688,24 @@ function SmartAI:useCardFireAttack(fire_attack, use)
 		and self.player:getHandcardNum() > 1 and not self.player:hasSkill("jueqing") and not self.player:hasSkill("mingshi")
 		and not self.room:isProhibited(self.player, self.player, fire_attack)
 		and self:damageIsEffective(self.player, sgs.DamageStruct_Fire, self.player) and not self:cantbeHurt(self.player)
-		and self:hasTrickEffective(fire_attack, self.player)
-		and (self.player:getHp() > 1 or self:getCardsNum("Peach") >= 1 or self:getCardsNum("Analeptic") >= 1 or self.player:hasSkill("buqu")
-			or (self.player:hasSkill("niepan") and self.player:getMark("@nirvana") > 0)) then
+		and self:hasTrickEffective(fire_attack, self.player) then
 
-		table.insert(targets, self.player)
+		if self.player:hasSkill("niepan") and self.player:getMark("@nirvana") > 0 then
+			table.insert(targets, self.player)
+		elseif hasBuquEffect(self.player)then
+			table.insert(targets, self.player)
+		else
+			local leastHP = 1
+			if self.player:hasArmorEffect("Vine") then leastHP = leastHP + 1 end
+			if self.player:getMark("@gale") > 0 then leastHP =leastHP + 1 end
+			local jxd = self.room:findPlayerBySkillName("wuling")
+			if jxd and jxd:getMark("@wind") > 0 then leastHP = leastHP + 1 end
+			if self.player:getHp() > leastHP then
+				table.insert(targets, self.player)
+			elseif self:getCardsNum("Peach") + self:getCardsNum("Analeptic") > self.player:getHp() - leastHP then
+				table.insert(targets, self.player)
+			end
+		end
 	end
 
 	for _, enemy in ipairs(enemies) do
