@@ -14,6 +14,7 @@ function SmartAI:canAttack(enemy, attacker, nature)
 end
 
 function hasExplicitRebel(room)
+	room = room or global_room
 	for _, player in sgs.qlist(room:getAllPlayers()) do
 		if sgs.isRolePredictable() and  sgs.evaluatePlayerRole(player) == "rebel" then return true end
 		if sgs.compareRoleEvaluation(player, "rebel", "loyalist") == "rebel" then return true end
@@ -428,7 +429,7 @@ function SmartAI:findWeaponToUse(enemy)
 	end
 	if not hasweapon then return end
 	if self.player:getWeapon() then weaponvalue[self.player:getWeapon()] = self:evaluateWeapon(self.player:getWeapon(), self.player, enemy) end
-	local max_value, max_card = -10
+	local max_value, max_card = -1000
 	for c, v in pairs(weaponvalue) do
 		if v > max_value then max_card = c max_value = v end
 	end
@@ -539,7 +540,17 @@ function SmartAI:useCardSlash(card, use)
 			and self:slashIsEffective(card, target, self.player, shoulduse_wuqian)
 			and not (target:hasSkill("xiangle") and basicnum < 2) and not canliuli
 			and not (not self:isWeak(target) and #self.enemies > 1 and #self.friends > 1 and self.player:hasSkill("keji")
-			and self:getOverflow() > 0 and not self:hasCrossbowEffect()) then
+				and self:getOverflow() > 0 and not self:hasCrossbowEffect()) then
+
+			if target:getHp() > 1 and target:hasSkill("jianxiong") and self.player:hasWeapon("Spear") and card:getSkillName() == "Spear" then
+				local ids, isGood = card:getSubcards(), true
+				for _, id in sgs.qlist(ids) do
+					local c = sgs.Sanguosha:getCard(id)
+					if isCard("Peach", c, target) or isCard("Analeptic", c, target) then isGood = false break end
+				end
+				if not isGood then continue end
+			end
+
 			-- fill the card use struct
 			local usecard = card
 			if not use.to or use.to:isEmpty() then
@@ -615,9 +626,9 @@ function SmartAI:useCardSlash(card, use)
 		if (not use.current_targets or not table.contains(use.current_targets, friend:objectName()))
 			and not self:hasHeavySlashDamage(self.player, card, friend) and card:getSkillName() ~= "lihuo"
 			and (not use.to or not use.to:contains(friend))
-			and (self.player:hasSkill("pojun") and friend:getHp() > 4 and getCardsNum("Jink", friend, self.player) == 0 and friend:getHandcardNum() < 3)
-			or (self:getDamagedEffects(friend, self.player) and not (friend:isLord() and #self.enemies < 1))
-			or (self:needToLoseHp(friend, self.player, true, true) and not (friend:isLord() and #self.enemies < 1)) then
+			and ((self.player:hasSkill("pojun") and friend:getHp() > 4 and getCardsNum("Jink", friend, self.player) == 0 and friend:getHandcardNum() < 3)
+				or (self:getDamagedEffects(friend, self.player) and not (friend:isLord() and #self.enemies < 1))
+				or (self:needToLoseHp(friend, self.player, true, true) and not (friend:isLord() and #self.enemies < 1))) then
 
 			if not slash_prohibit then
 				if ((self.player:canSlash(friend, card, not no_distance, rangefix))
@@ -861,6 +872,10 @@ sgs.ai_skill_cardask["slash-jink"] = function(self, data, pattern, target)
 				return "."
 			end
 		end
+		if self.player:getHp() > 1 and getKnownCard(target, self.player, "Slash") >= 1 and getKnownCard(target, self.player, "Analeptic") >= 1 and self:getCardsNum("Jink") == 1
+			and (target:getPhase() < sgs.Player_Play or player:canSlash(self.player)) then
+			return "."
+		end
 		if not (target:hasSkill("nosqianxi") and target:distanceTo(self.player) == 1) then
 			if target:hasWeapon("Axe") then
 				if target:hasSkills(sgs.lose_equip_skill) and target:getEquips():length() > 1 and target:getCards("he"):length() > 2 then return not isdummy and "." end
@@ -927,7 +942,7 @@ function SmartAI:canHit(to, from, conservative)
 			or (from:hasSkill("roulin") and to:isFemale()) or (from:isFemale() and to:hasSkill("roulin")))
 	if to:objectName() == self.player:objectName() then
 		if getCardsNum("Jink", to, from) == 0 then return true end
-		if need_double_jink and self:getCardsNum("Jink", to, from) < 2 then return true end
+		if need_double_jink and getCardsNum("Jink", to, from) < 2 then return true end
 	end
 	if getCardsNum("Jink", to, from) == 0 then return true end
 	if need_double_jink and getCardsNum("Jink", to, from) < 2 then return true end
@@ -2047,7 +2062,7 @@ function SmartAI:getValuableCard(who)
 
 	local equips = sgs.QList2Table(who:getEquips())
 	for _,equip in ipairs(equips) do
-		if who:hasSkill("longhun") and not equip:getSuit() == sgs.Card_Diamond then return equip:getEffectiveId() end
+		if who:hasSkill("longhun") and equip:getSuit() ~= sgs.Card_Diamond then return equip:getEffectiveId() end
 		if self:hasSkills("guose|yanxiao", who) and equip:getSuit() == sgs.Card_Diamond then  return equip:getEffectiveId() end
 		if who:hasSkill("baobian") and who:getHp() <= 2 then return  equip:getEffectiveId() end
 		if self:hasSkills("qixi|duanliang|yinling|guidao", who) and equip:isBlack() then  return equip:getEffectiveId() end
@@ -2651,7 +2666,7 @@ sgs.ai_skill_cardask["collateral-slash"] = function(self, data, pattern, target2
 		end
 		for _, slash in ipairs(self:getCards("Slash")) do
 			if (target2:getHp() > 3 or not self:canHit(target2, self.player, self:hasHeavySlashDamage(self.player, slash, target2)))
-				and not target2:getRole() == "lord" and self.player:getHandcardNum() > 1 then
+				and target2:getRole() ~= "lord" and self.player:getHandcardNum() > 1 then
 					return slash:toString()
 			end
 			if self:needToLoseHp(target2, self.player) then return slash:toString() end

@@ -355,7 +355,7 @@ sgs.ai_skill_cardask["xuanhuo-slash"] = function(self, data, pattern, t1, t2, pr
 		for _, slash in ipairs(self:getCards("Slash")) do
 			if self:isFriend(target2) and not self:isFriend(fazheng) then
 				if (target2:getHp() > 3 or not self:canHit(target2, self.player, self:hasHeavySlashDamage(self.player, slash, target2)))
-					and not target2:getRole() == "lord" then
+					and target2:getRole() ~= "lord" then
 						return slash:toString()
 				end
 				if self:needToLoseHp(target2, self.player) then return slash:toString() end
@@ -796,9 +796,7 @@ sgs.ai_skill_use_func.XianzhenCard = function(card, use, self)
 	end
 	local cards = sgs.QList2Table(self.player:getHandcards())
 	self:sortByUseValue(cards, true)
-	if self:getUseValue(cards[1]) >= 6 or self:getKeepValue(cards[1]) >= 6 then return end
-	local shouldUse = self:getOverflow() > 0
-	if shouldUse then
+	if (self:getUseValue(cards[1]) < 6 and self:getKeepValue(cards[1]) < 6) or self:getOverflow() > 0 then
 		for _, enemy in ipairs(self.enemies) do
 			if not (enemy:hasSkill("kongcheng") and enemy:getHandcardNum() == 1) and not enemy:isKongcheng() and not enemy:hasSkills("tuntian+zaoxian") then
 				self.xianzhen_card = cards[1]:getId()

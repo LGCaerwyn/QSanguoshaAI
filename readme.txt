@@ -7,3 +7,4 @@
 QQ群:  191748263
 代码:  https://github.com/haveatry823/QSanguoshaAI
 下载:  https://github.com/haveatry823/QSanguoshaAI/archive/dev.zip
+AI问题讨论：http://tieba.baidu.com/p/2760666133

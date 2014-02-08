@@ -368,7 +368,16 @@ end
 
 sgs.ai_skill_use_func.TianyiCard = function(card,use,self)
 	self:sort(self.enemies, "handcard")
-	local max_card = self:getMaxCard()
+	local cards = sgs.CardList()
+	local peach = 0
+	for _, c in sgs.qlist(self.player:getHandcards()) do
+		if isCard("Peach", c, self.player) and peach < 2 then
+			peach = peach + 1
+		else
+			cards:append(c)
+		end
+	end
+	local max_card = self:getMaxCard(self.player, cards)
 	if not max_card then return end
 	local max_point = max_card:getNumber()
 	local slashcount = self:getCardsNum("Slash")

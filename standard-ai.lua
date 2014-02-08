@@ -22,9 +22,7 @@ sgs.ai_skill_invoke.hujia = function(self, data)
 	end
 
 	for _, card in sgs.qlist(cards) do
-		if isCard("Jink", card, self.player) then
-			return false
-		end
+		if isCard("Jink", card, self.player) then return false end
 	end
 	local lieges = self.room:getLieges("wei", self.player)
 	if lieges:isEmpty() then return end
@@ -734,7 +732,7 @@ function SmartAI:willSkipPlayPhase(player, NotContains_Null)
 	local friend_null = 0
 	local friend_snatch_dismantlement = 0
 	local cp = self.room:getCurrent()
-	if self.player:objectName() == cp:objectName() and self.player:objectName() ~= player:objectName() and self:isFriend(player) then
+	if cp and self.player:objectName() == cp:objectName() and self.player:objectName() ~= player:objectName() and self:isFriend(player) then
 		for _, hcard in sgs.qlist(self.player:getCards("he")) do
 			if (isCard("Snatch", hcard, self.player) and self.player:distanceTo(player) == 1) or isCard("Dismantlement", hcard, self.player) then
 				local trick = sgs.Sanguosha:cloneCard(hcard:objectName(), hcard:getSuit(), hcard:getNumber())
@@ -767,7 +765,7 @@ function SmartAI:willSkipDrawPhase(player, NotContains_Null)
 			if self:isEnemy(p, player) then friend_null = friend_null - getCardsNum("Nullification", p, self.player) end
 		end
 	end
-	if self.player:objectName() == cp:objectName() and self.player:objectName() ~= player:objectName() and self:isFriend(player) then
+	if cp and self.player:objectName() == cp:objectName() and self.player:objectName() ~= player:objectName() and self:isFriend(player) then
 		for _, hcard in sgs.qlist(self.player:getCards("he")) do
 			if (isCard("Snatch", hcard, self.player) and self.player:distanceTo(player) == 1) or isCard("Dismantlement", hcard, self.player) then
 				local trick = sgs.Sanguosha:cloneCard(hcard:objectName(), hcard:getSuit(), hcard:getNumber())
@@ -1340,6 +1338,7 @@ sgs.ai_skill_invoke.tieji = function(self, data)
 	local zj = self.room:findPlayerBySkillName("guidao")
 	if zj and self:isEnemy(zj) and self:canRetrial(zj) then return false end
 	
+	--[[
 	if target:hasArmorEffect("EightDiagram") and not IgnoreArmor(self.player, target) then return true end
 	if target:hasLordSkill("hujia") then
 		for _, p in ipairs(self.enemies) do
@@ -1349,6 +1348,7 @@ sgs.ai_skill_invoke.tieji = function(self, data)
 	if target:hasSkill("longhun") and target:getHp() == 1 and self:hasSuit("club", true, target) then return true end
 
 	if target:isKongcheng() or (self:getKnownNum(target) == target:getHandcardNum() and getKnownCard(target, self.player, "Jink", true) == 0) then return false end
+	]]
 	return true
 end
 

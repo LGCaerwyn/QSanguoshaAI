@@ -1124,14 +1124,14 @@ sgs.ai_skill_use_func.TaichenCard = function(card, use, self)
 				target = enemy 
 				break
 			end
-			if not (enemy:hasSkill("tuntian") and enemy:hasSkill("zaoxian")) then
+			if not enemy:hasSkill("tuntian+zaoxian") then
 				target = enemy 
 				break
 			end
 		end
 	end
 	
-	if not target then return end		
+	if not target then return end
 	if not card_str then
 		if self:isFriend(target) and self.player:getHp() > 2 then card_str = "@TaichenCard=." end
 	end
@@ -1139,7 +1139,7 @@ sgs.ai_skill_use_func.TaichenCard = function(card, use, self)
 	if card_str then
 		if use.to then
 			if self:isFriend(target) then
-				target:setFlags("TaichenOK")
+				if not use.isDummy then target:setFlags("TaichenOK") end
 			end
 			use.to:append(target)
 		end

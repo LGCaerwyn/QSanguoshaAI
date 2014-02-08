@@ -47,7 +47,6 @@ end
 	备注：为了解决场上有古锭刀时弃白银狮子的问题而重写此弃牌方案。
 ]]--
 sgs.ai_skill_discard.yongsi = function(self, discard_num, min_num, optional, include_equip)
-	self:assignKeep(nil, true)
 	if optional then 
 		return {} 
 	end
@@ -1100,7 +1099,7 @@ sgs.ai_skill_use_func.ZhoufuCard = function(card, use, self)
 				end
 			elseif reason == "supply_shortage" then
 				for _, card in ipairs(cards) do
-					if not card:getSuit() == sgs.Card_Club and not self:isValuableCard(card) then
+					if card:getSuit() ~= sgs.Card_Club and not self:isValuableCard(card) then
 						use.card = sgs.Card_Parse("@ZhoufuCard=" .. card:getEffectiveId())
 						if use.to then use.to:append(enemy) end
 						return
