@@ -63,7 +63,7 @@ function debugFunc(self, room, player, data)
 				rel = rel .. " " .. level
 
 				debugmsg("%s[%s]: %d:%d:%d %s",
-					sgs.Sanguosha:translate(players[i]:getGeneralName()),					
+					sgs.Sanguosha:translate(players[i]:getGeneralName()),
 					sgs.Sanguosha:translate(sgs.evaluatePlayerRole(players[i])),
 					sgs.role_evaluation[players[i]:objectName()]["rebel"],
 					sgs.role_evaluation[players[i]:objectName()]["loyalist"],
@@ -77,11 +77,11 @@ function debugFunc(self, room, player, data)
 			debugmsg("===================")
 			debugmsg("查看对杀的防御; 当前AI是: %s[%s]",sgs.Sanguosha:translate(player:getGeneralName()),sgs.Sanguosha:translate(player:getRole()) )
 			for i=1, #players, 1 do
-				debugmsg("%s:%.2f",sgs.Sanguosha:translate(players[i]:getGeneralName()),sgs.getDefenseSlash(players[i]))				
+				debugmsg("%s:%.2f",sgs.Sanguosha:translate(players[i]:getGeneralName()),sgs.getDefenseSlash(players[i]))
 			end
 		end
-		
-	until false  
+
+	until false
 end
 
 
@@ -93,13 +93,13 @@ function logmsg(fname,fmt,...)
 end
 
 function endlessNiepan(who)
-	local room = who:getRoom()	
+	local room = who:getRoom()
 	if who:getGeneral2() or who:getHp() > 0 then return end
 
 	local rebel_value = sgs.role_evaluation[who:objectName()]["rebel"]
 	local renegade_value = sgs.role_evaluation[who:objectName()]["renegade"]
 	local loyalist_value = sgs.role_evaluation[who:objectName()]["loyalist"]
-	
+
 	for _,skill in sgs.qlist(who:getVisibleSkillList()) do
 		if skill:getLocation()==sgs.Skill_Right then
 			room:detachSkillFromPlayer(who, skill:objectName())
@@ -189,8 +189,8 @@ function sgs.checkMisjudge(player)
 			elseif sgs.evaluatePlayerRole(p) == "renegade" and renegade_num > 0 then evaluate_renegade = evaluate_renegade + 1
 			end
 		end
-		
-		if evaluate_renegade < 1 then 
+
+		if evaluate_renegade < 1 then
 			if (evaluate_rebel >= rebel_num + renegade_num and evaluate_rebel > rebel_num)
 				or (evaluate_loyalist >= loyalist_num + renegade_num and evaluate_loyalist > loyalist_num)
 				or (evaluate_rebel == rebel_num + 1 and evaluate_loyalist == loyalist_num + 1) then
@@ -234,9 +234,11 @@ function sgs.broadcastRole(role_type)
 	sgs.evaluateAlivePlayersRole()
 end
 
-function sgs.printFEList()
+function sgs.printFEList(player)
 	global_room:writeToConsole("")
+	global_room:writeToConsole("gameProcess  -> " .. sgs.gameProcess())
 	for _, p in sgs.qlist(global_room:getAlivePlayers()) do
+		if player and p:objectName() ~= player:objectName() then continue end
 		global_room:writeToConsole("====  " .. p:getGeneralName() .. "  Role::" .. p:getRole() .. "  ====")
 		local sgsself = sgs.ais[p:objectName()]
 		sgsself:updatePlayers()

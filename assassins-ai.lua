@@ -1,14 +1,14 @@
 sgs.ai_skill_invoke.moukui = function(self, data)
 	local target = data:toPlayer()
 	sgs.moukui_target = target
-	if self:isFriend(target) then return self:needToThrowArmor(target) else return true end 
+	if self:isFriend(target) then return self:needToThrowArmor(target) else return true end
 end
 
 sgs.ai_skill_choice.moukui = function(self, choices, data)
 	local target = sgs.moukui_target
 	if self:isEnemy(target) and self:doNotDiscard(target) then
 		return "draw"
-	end	
+	end
 	return "discard"
 end
 
@@ -20,7 +20,7 @@ sgs.ai_skill_invoke.tianming = function(self, data)
 	if self:canHit() then return true end
 	local unpreferedCards = {}
 	local cards = sgs.QList2Table(self.player:getHandcards())
-	
+
 	self:sortByKeepValue(cards)
 	if self:isWeak() then
 		for _, card in ipairs(cards) do
@@ -95,7 +95,7 @@ mizhao_skill.getTurnUseCard = function(self)
 	local allcard = {}
 	cards = sgs.QList2Table(cards)
 	for _,card in ipairs(cards) do
-		table.insert(allcard, card:getId()) 
+		table.insert(allcard, card:getId())
 	end
 	local parsed_card = sgs.Card_Parse("@MizhaoCard=" .. table.concat(allcard,"+"))
 	return parsed_card
@@ -233,15 +233,15 @@ sgs.ai_skill_cardask["@jieyuan-decrease"] = function(self, data)
 	local damage = data:toDamage()
 	local cards = sgs.QList2Table(self.player:getHandcards())
 	self:sortByKeepValue(cards)
-	if damage.card and damage.card:isKindOf("Slash") then		 
+	if damage.card and damage.card:isKindOf("Slash") then
 		if self:hasHeavySlashDamage(damage.from, damage.card, self.player) then
 			for _,card in ipairs(cards) do
 				if card:isRed() then return "$" .. card:getEffectiveId() end
 			end
 		end
 	end
-	if self:getDamagedEffects(self.player, damage.from) and damage.damage <= 1 then return "." end	
-	if self:needToLoseHp(self.player, damage.from) and damage.damage <= 1 then return "." end	
+	if self:getDamagedEffects(self.player, damage.from) and damage.damage <= 1 then return "." end
+	if self:needToLoseHp(self.player, damage.from) and damage.damage <= 1 then return "." end
 	for _,card in ipairs(cards) do
 		if card:isRed() then return "$" .. card:getEffectiveId() end
 	end
@@ -276,7 +276,7 @@ sgs.ai_skill_use_func.MixinCard = function(card, use, self)
 	local cards = self.player:getHandcards()
 	cards = sgs.QList2Table(cards)
 	if #self.enemies < 1 then return end
-	local slash	
+	local slash
 	self:sortByKeepValue(cards)
 	for _, acard in ipairs(cards) do
 		if acard:isKindOf("Slash") then
@@ -284,7 +284,7 @@ sgs.ai_skill_use_func.MixinCard = function(card, use, self)
 			break
 		end
 	end
-	
+
 	if slash then
 		for _, friend in ipairs(self.friends_noself) do
 			if friend:hasSkills("tuntian+zaoxian") and not friend:hasSkill("manjuan") then
@@ -332,8 +332,8 @@ sgs.ai_skill_cardask["#mixin"] = function(self, data, pattern, target)
 				if self:getDamagedEffects(target, self.player) then return slash:toString() end
 				if self:needToLoseHp(target, self.player, nil, true) then return slash:toString() end
 			end
-			
-			if not self:isFriend(target) and self:slashIsEffective(slash, target) 
+
+			if not self:isFriend(target) and self:slashIsEffective(slash, target)
 				and not self:getDamagedEffects(target, self.player, true) and not self:needLeiji(target, self.player) then
 					return slash:toString()
 			end
@@ -341,7 +341,7 @@ sgs.ai_skill_cardask["#mixin"] = function(self, data, pattern, target)
 		for _, slash in ipairs(self:getCards("Slash")) do
 			if not self:isFriend(target) then
 				if not self:needLeiji(target, self.player) then return slash:toString() end
-				if not self:slashIsEffective(slash, target) then return slash:toString() end			
+				if not self:slashIsEffective(slash, target) then return slash:toString() end
 			end
 		end
 	end
@@ -420,20 +420,20 @@ sgs.ai_skill_use["@@fengyin"] = function(self, data)
 	local cards = self.player:getHandcards()
 	local card
 	cards = sgs.QList2Table(cards)
-	
+
 	for _,acard in ipairs(cards)  do
 		if acard:isKindOf("Slash") then
 			card = acard
 			break
 		end
 	end
-	
+
 	if not card then
 		return "."
 	end
-	
+
 	local card_id = card:getEffectiveId()
-	
+
 	local target = self.room:getCurrent()
 	if self:isFriend(target) and self:willSkipPlayPhase(target) and target:getHandcardNum() + 2 > target:getHp() and target:getHp() >= self.player:getHp() then
 		return "@FengyinCard="..card_id

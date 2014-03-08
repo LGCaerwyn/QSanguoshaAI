@@ -107,7 +107,7 @@ sgs.ai_playerchosen_intention.koftuxi = function(self, from, to)
 	end
 end
 
-sgs.ai_chaofeng.kof_zhangliao = 4
+
 
 xiechan_skill = {}
 xiechan_skill.name = "xiechan"
@@ -280,14 +280,14 @@ sgs.ai_skill_use_func.MouzhuCard = function(card, use, self)
 		end
 	end
 
-	for _, enemy in ipairs(self.enemies) do	
+	for _, enemy in ipairs(self.enemies) do
 		if enemy:getHandcardNum() > 0 and  (self:getDamagedEffects(self.player, enemy) or self:needToLoseHp(self.player, enemy)) then
 			use.card = card
 			if use.to then use.to:append(enemy) end
 			return
 		end
 	end
-	
+
 	local first, second, third, fourth
 	local slash = self:getCard("Slash")
 	local slash_nosuit = sgs.Sanguosha:cloneCard("slash")
@@ -300,7 +300,7 @@ sgs.ai_skill_use_func.MouzhuCard = function(card, use, self)
 				second = enemy
 			elseif not enemy:hasSkills("wushuang|mengjin|tieji")
 				and not ((enemy:hasSkill("roulin") or enemy:hasWeapon("DoubleSword")) and enemy:getGender() ~= self.player:getGender()) then
-				
+
 				if enemy:getHandcardNum() == 1 and slash and not third and self.player:inMyAttackRange(enemy)
 					and (self:hasHeavySlashDamage(self.player, slash, enemy) or self.player:hasWeapon("GudingBlade") and not self:needKongcheng(enemy))
 					and (not self:isWeak() or self:getCardsNum("Peach") + self:getCardsNum("Analeptic") > 0) then
@@ -311,7 +311,7 @@ sgs.ai_skill_use_func.MouzhuCard = function(card, use, self)
 			end
 		end
 	end
-	
+
 	local target
 	if canleiji then
 		target = fourth and third or first or second
@@ -323,7 +323,7 @@ sgs.ai_skill_use_func.MouzhuCard = function(card, use, self)
 		if use.to then use.to:append(target) end
 		return
 	end
-	
+
 end
 
 sgs.ai_skill_cardask["@mouzhu-give"] = function(self, data)
@@ -370,7 +370,7 @@ sgs.ai_skill_cardask["@mouzhu-give"] = function(self, data)
 			if not c:isKindOf("Peach") then return c:getEffectiveId() end
 		end
 	end
-	
+
 	return cards[1]:getEffectiveId()
 end
 
@@ -392,7 +392,7 @@ sgs.ai_skill_choice.mouzhu = function(self, choices)
 		if target:hasSkills("leiji|nosleiji") and choices:match("duel") then return "duel" end
 		if self:getCardsNum("Slash") > getCardsNum("Slash", target, self.player) and choices:match("duel") then return "duel" end
 	end
-	
+
 	if choices:match("slash") then return "slash" else return "duel" end
 end
 

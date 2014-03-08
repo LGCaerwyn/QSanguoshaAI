@@ -181,7 +181,7 @@ sgs.ai_skill_use_func.DuanxieCard = function(card, use, self)
 			if use.to then use.to:append(enemy) end
 			return
 		end
-	end	
+	end
 
 end
 
@@ -237,7 +237,7 @@ sgs.ai_skill_choice.yingyang = function(self, choices, data)
 			else
 				return "up"
 			end
-		else				
+		else
 			if self:isFriend(from) then
 				if self:getCardsNum("Jink") > 0 then return "down"
 				elseif getCardsNum("Jink", from, self.player) >= 1 then return "up"
