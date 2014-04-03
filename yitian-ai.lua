@@ -161,14 +161,15 @@ end
 	描述：出牌阶段，你可以和一名角色拼点：若你赢，你获得对方的拼点牌，并可立即再次与其拼点，如此反复，直到你没赢或不愿意继续拼点为止。每阶段限一次。
 ]]--
 sgs.ai_skill_invoke.jueji = function(self, data)
-	local target
-	for _, player in sgs.qlist(self.room:getOtherPlayers(self.player)) do
-		if player:hasFlag("jueji_target") then
-			target = player
-		end
+	local target = data:toPlayer()
+	if not target then self.jueji_card = nil return false end
+	local invoke = not self:doNotDiscard(target, "h")
+	if invoke then
+		local cards = sgs.QList2Table(self.player:getHandcards())
+		self:sortByUseValue(cards, true)
+		self.jueji_card = cards[1]:getId()
 	end
-	if not target then return false end
-	return not self:doNotDiscard(target, "h")
+	return invoke
 end
 
 local jueji_skill = {}
@@ -187,7 +188,6 @@ sgs.ai_skill_use_func.JuejiCard = function(card, use, self)
 		self:sortByUseValue(cards, true)
 		self.jueji_card = cards[1]:getId()
 		use.card = sgs.Card_Parse("@JuejiCard=.")
-		zhugeliang:setFlags("jueji_target")
 		if use.to then use.to:append(zhugeliang) end
 		return
 	end
@@ -201,7 +201,6 @@ sgs.ai_skill_use_func.JuejiCard = function(card, use, self)
 			if not self:doNotDiscard(enemy, "h") then
 				self.jueji_card = max_card:getId()
 				use.card = sgs.Card_Parse("@JuejiCard=.")
-				enemy:setFlags("jueji_target")
 				if use.to then use.to:append(enemy) end
 				return
 			end
@@ -220,7 +219,6 @@ sgs.ai_skill_use_func.JuejiCard = function(card, use, self)
 				or (not enemy_max_card and max_point > 10) then
 				self.jueji_card = max_card:getId()
 				use.card = sgs.Card_Parse("@JuejiCard=.")
-				enemy:setFlags("jueji_target")
 				if use.to then use.to:append(enemy) end
 				return
 			end
@@ -233,7 +231,6 @@ sgs.ai_skill_use_func.JuejiCard = function(card, use, self)
 			if not self:doNotDiscard(enemy, "h", true) then
 				self.jueji_card = cards[1]:getId()
 				use.card = sgs.Card_Parse("@JuejiCard=.")
-				enemy:setFlags("jueji_target")
 				if use.to then use.to:append(enemy) end
 				return
 			end

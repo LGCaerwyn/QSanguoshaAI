@@ -1,4 +1,8 @@
 sgs.ai_skill_invoke.qianxi = function(self, data)
+	if self.player:hasFlag("AI_doNotInvoke_qianxi") then
+		self.player:setFlags("-AI_doNotInvoke_qianxi")
+		return
+	end
 	if self.player:getPile("incantation"):length() > 0 then
 		local card = sgs.Sanguosha:getCard(self.player:getPile("incantation"):first())
 		if not self.player:getJudgingArea():isEmpty() and not self.player:containsTrick("YanxiaoCard") and not self:hasWizard(self.enemies, true) then

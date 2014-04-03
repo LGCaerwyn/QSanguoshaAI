@@ -406,6 +406,8 @@ sgs.ai_card_intention.XuanfengCard = function(self, card, from, tos)
 end
 sgs.xuanfeng_keep_value = sgs.xiaoji_keep_value
 
+sgs.ai_cardneed.xuanfeng = sgs.ai_cardneed.equip
+
 sgs.ai_skill_playerchosen.xuanfeng = function(self, targets)
 	targets = sgs.QList2Table(targets)
 	self:sort(targets,"defense")

@@ -782,9 +782,14 @@ function SmartAI:willSkipDrawPhase(player, NotContains_Null)
 end
 
 sgs.ai_skill_invoke.luoshen = function(self, data)
+	if self.player:hasFlag("AI_doNotInvoke_luoshen") then
+		self.player:setFlags("-AI_doNotInvoke_luoshen")
+		return
+	end
+	if self.player:hasFlag("AI_Luoshen_Conflict_With_Guanxing") and self.player:getMark("AI_loushen_times") == 0 then return end
  	if self:willSkipPlayPhase() then
 		local erzhang = self.room:findPlayerBySkillName("guzheng")
-		if erzhang and self:isEnemy(erzhang) then return false end
+		if erzhang and self:isEnemy(erzhang) and self:getOverflow() > 1 then return false end
 		if self.player:getPile("incantation"):length() > 0 then
 			local card = sgs.Sanguosha:getCard(self.player:getPile("incantation"):first())
 			if not self.player:getJudgingArea():isEmpty() and not self.player:containsTrick("YanxiaoCard") and not self:hasWizard(self.enemies, true) then
@@ -801,6 +806,17 @@ sgs.ai_skill_invoke.luoshen = function(self, data)
 		end
  	end
  	return true
+end
+
+sgs.ai_choicemade_filter.skillInvoke.luoshen = function(self, player, promptlist)
+	if self.player:hasFlag("AI_Luoshen_Conflict_With_Guanxing") then
+		if promptlist[#promptlist] == "yes" then
+			player:removeMark("AI_loushen_times")
+		else
+			self.player:setFlags("-AI_Luoshen_Conflict_With_Guanxing")
+			self.player:setMark("AI_loushen_times", 0)
+		end
+	end
 end
 
 sgs.qingguo_suit_value = {
@@ -2078,8 +2094,9 @@ jieyin_skill.getTurnUseCard=function(self)
 end
 
 
-function SmartAI:getWoundedFriend(maleOnly)
-	self:sort(self.friends, "hp")
+function SmartAI:getWoundedFriend(maleOnly, include_self)
+	local friends = include_self and self.friends or self.friends_noself
+	self:sort(friends, "hp")
 	local list1 = {}	-- need help
 	local list2 = {}	-- do not need help
 	local addToList = function(p,index)
@@ -2107,7 +2124,7 @@ function SmartAI:getWoundedFriend(maleOnly)
 		end
 	end
 
-	for _, friend in ipairs(self.friends) do
+	for _, friend in ipairs(friends) do
 		if friend:isLord() then
 			if friend:getMark("hunzi") == 0 and friend:hasSkill("hunzi")
 					and self:getEnemyNumBySeat(self.player,friend) <= (friend:getHp()>= 2 and 1 or 0) then
@@ -2132,8 +2149,6 @@ end
 
 sgs.ai_skill_use_func.JieyinCard = function(card, use, self)
 	local arr1, arr2 = self:getWoundedFriend(true)
-	table.removeOne(arr1, self.player)
-	table.removeOne(arr2, self.player)
 	local target = nil
 
 	repeat
@@ -2186,7 +2201,7 @@ sgs.xiaoji_keep_value = {
 	DefensiveHorse = 5
 }
 
-
+sgs.ai_cardneed.xiaoji = sgs.ai_cardneed.equip
 
 local qingnang_skill = {}
 qingnang_skill.name = "qingnang"
@@ -2210,7 +2225,7 @@ qingnang_skill.getTurnUseCard = function(self)
 end
 
 sgs.ai_skill_use_func.QingnangCard = function(card, use, self)
-	local arr1, arr2 = self:getWoundedFriend()
+	local arr1, arr2 = self:getWoundedFriend(false, true)
 	local target = nil
 
 	if #arr1 > 0 and (self:isWeak(arr1[1]) or self:getOverflow() >= 1) and arr1[1]:getHp() < getBestHp(arr1[1]) then target = arr1[1] end
@@ -2681,8 +2696,9 @@ sgs.ai_skill_invoke.wangzun = function(self, data)
 end
 
 sgs.ai_choicemade_filter.skillInvoke.wangzun = function(self, player, promptlist)
-	local lord = self.room:getLord()
-	if lord and promptlist[#promptlist] == "yes" then
+	if promptlist[#promptlist] == "yes" then
+		local lord = self.room:getCurrent()
+		if not self:isWeak(lord) and (self:getOverflow(lord) < -2 or (self:willSkipDrawPhase(lord) and self:getOverflow(lord) < 0)) then return end
 		sgs.updateIntention(player, lord, 10)
 	end
 end

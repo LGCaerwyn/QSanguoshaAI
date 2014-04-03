@@ -247,7 +247,12 @@ sgs.ai_view_as.yanzheng = function(card, player, card_place)
 end
 
 sgs.ai_skill_invoke.manjuan = true
-sgs.ai_skill_invoke.zuixiang = true
+sgs.ai_skill_invoke.zuixiang = function(self)
+	if self.player:hasFlag("AI_doNotInvoke_zuixiang") then
+		self.player:setFlags("-AI_doNotInvoke_zuixiang")
+		return
+	end
+end
 
 sgs.ai_skill_askforag.manjuan = function(self, card_ids)
 	local cards = {}
@@ -471,6 +476,10 @@ sgs.ai_skill_cardask["@mouduan"] = function(self, data)
 end
 
 sgs.ai_skill_playerchosen.zhaolie = function(self, targets)
+	if self.player:hasFlag("AI_doNotInvoke_zhaolie") then
+		self.player:setFlags("-AI_doNotInvoke_zhaolie")
+		return
+	end
 	targets = sgs.QList2Table(targets)
 	self:sort(targets, "hp")
 	for _, target in ipairs(targets) do
@@ -658,7 +667,6 @@ sgs.ai_skill_use_func.YanxiaoCard = function(card, use, self)
 	local tricks
 	self:sort(self.friends_noself, "defense")
 	for _, friend in ipairs(self.friends_noself) do
-		local judges = friend:getJudgingArea()
 		local need_yanxiao = (friend:containsTrick("lightning") and self:getFinalRetrial(friend) == 2)
 							or friend:containsTrick("indulgence") or friend:containsTrick("supply_shortage")
 		if need_yanxiao and not friend:containsTrick("YanxiaoCard") then
@@ -681,7 +689,6 @@ sgs.ai_skill_use_func.YanxiaoCard = function(card, use, self)
 		end
 
 		for _, friend in ipairs(self.friends_noself) do
-			local judges = friend:getJudgingArea()
 			if not friend:containsTrick("YanxiaoCard") then
 				use.card = card
 				if use.to then use.to:append(friend) end

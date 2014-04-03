@@ -8,7 +8,7 @@ local function card_for_qiaobian(self, who, return_prompt)
 				if not judge:isKindOf("YanxiaoCard") then
 					for _, enemy in ipairs(self.enemies) do
 						if not enemy:containsTrick(judge:objectName()) and not enemy:containsTrick("YanxiaoCard")
-							and not self.room:isProhibited(self.player, enemy, judge) then
+							and not self.room:isProhibited(self.player, enemy, judge) and not (enemy:hasSkill("hongyan") or judge:isKindOf("Lightning")) then
 							target = enemy
 							break
 						end
@@ -452,7 +452,7 @@ sgs.ai_skill_invoke.fangquan = function(self, data)
 			if dummy_use.card then shouldUse = shouldUse + (card:isKindOf("ExNihilo") and 2 or 1) end
 		end
 		if card:isKindOf("Weapon") then
-			local new_range = sgs.weapon_range[card:getClassName()]
+			local new_range = sgs.weapon_range[card:getClassName()] or 0
 			local current_range = self.player:getAttackRange()
 			range_fix = math.min(current_range - new_range, 0)
 		end
@@ -503,7 +503,44 @@ sgs.ai_skill_invoke.fangquan = function(self, data)
 			break
 		end
 	end
-	return to_discard ~= nil
+
+	if to_discard then
+		if sgs.current_mode_players.rebel == 0 then
+			local lord = self.room:getLord()
+			if lord and self:isFriend(lord) then
+				return true
+			end
+		end
+
+		local AssistTarget = self:AssistTarget()
+		if AssistTarget and not self:willSkipPlayPhase(AssistTarget) then
+			return true
+		end
+
+		self:sort(self.friends_noself, "handcard")
+		self.friends_noself = sgs.reverse(self.friends_noself)
+		for _, target in ipairs(self.friends_noself) do
+			if not target:hasSkill("dawu") and target:hasSkills("yongsi|zhiheng|" .. sgs.priority_skill .. "|shensu")
+				and (not self:willSkipPlayPhase(target) or target:hasSkill("shensu")) then
+				return true
+			end
+		end
+
+		for _, target in ipairs(self.friends_noself) do
+			if target:hasSkill("dawu") then
+				local use = true
+				for _, p in ipairs(self.friends_noself) do
+					if p:getMark("@fog") > 0 then use = false break end
+				end
+				if use then
+					return true
+				end
+			else
+				return true
+			end
+		end
+	end
+	return false
 end
 
 sgs.ai_skill_use["@@fangquan"] = function(self, prompt)
@@ -521,8 +558,7 @@ sgs.ai_skill_use["@@fangquan"] = function(self, prompt)
 		return "@FangquanCard=" .. cards[1]:getEffectiveId() .. "->" .. AssistTarget:objectName()
 	end
 
-	self:sort(self.friends_noself, "handcard")
-	self.friends_noself = sgs.reverse(self.friends_noself)
+	self:sort(self.friends_noself, "chaofeng")
 	for _, target in ipairs(self.friends_noself) do
 		if not target:hasSkill("dawu") and target:hasSkills("yongsi|zhiheng|" .. sgs.priority_skill .. "|shensu")
 			and (not self:willSkipPlayPhase(target) or target:hasSkill("shensu")) then
@@ -539,6 +575,8 @@ sgs.ai_skill_use["@@fangquan"] = function(self, prompt)
 			if use then
 				return "@FangquanCard=" .. cards[1]:getEffectiveId() .. "->" .. target:objectName()
 			end
+		else
+			return "@FangquanCard=" .. cards[1]:getEffectiveId() .. "->" .. target:objectName()
 		end
 	end
 	return "."
@@ -695,12 +733,12 @@ sgs.ai_skill_use_func.ZhibaCard = function(card, use, self)
 		if self:isEnemy(lord) and max_num > 10 and max_num > lord_max_num then
 			if isCard("Jink", max_card, self.player) and self:getCardsNum("Jink") == 1 then return end
 			if isCard("Peach", max_card, self.player) or isCard("Analeptic", max_card, self.player) then return end
-			self.zhiba_pindian_card = max_card:getEffectiveId()
+			self.zhiba_pindian_card = max_card
 			zhiba_str = "@ZhibaCard=."
 		end
 		if self:isFriend(lord) and not lord:hasSkill("manjuan") and ((lord_max_num > 0 and min_num <= lord_max_num) or min_num < 7) then
 			if isCard("Jink", min_card, self.player) and self:getCardsNum("Jink") == 1 then return end
-			self.zhiba_pindian_card = min_card:getEffectiveId()
+			self.zhiba_pindian_card = min_card
 			zhiba_str = "@ZhibaCard=."
 		end
 
@@ -750,8 +788,12 @@ sgs.ai_choicemade_filter.pindian.zhiba_pindian = function(self, from, promptlist
 	local number = sgs.Sanguosha:getCard(tonumber(promptlist[4])):getNumber()
 	local lord = findPlayerByObjectName(self.room, promptlist[5])
 	if not lord then return end
-	if number < 6 then sgs.updateIntention(from, lord, -60)
-	elseif number > 8 then sgs.updateIntention(from, lord, 60) end
+	local lord_max_card = self:getMaxCard(lord)
+	if lord_max_card and lord_max_card:getNumber() >= number then sgs.updateIntention(from, lord, -60)
+	elseif lord_max_card and lord_max_card:getNumber() < number then sgs.updateIntention(from, lord, 60)
+	elseif number < 6 then sgs.updateIntention(from, lord, -60)
+	elseif number > 8 then sgs.updateIntention(from, lord, 60)
+	end
 end
 
 sgs.ai_need_damaged.hunzi = function(self, attacker, player)

@@ -1396,7 +1396,7 @@ function cardsView_spear(self, player, skill_name)
 		if not isCard("Slash", card, player) and not isCard("Peach", card, player) and not (isCard("ExNihilo", card, player) and player:getPhase() == sgs.Player_Play) then table.insert(newcards, card) end
 	end
 	if #newcards < 2 then return end
-	self:sortByKeepValue(newcards)
+	sgs.ais[player:objectName()]:sortByKeepValue(newcards)
 
 	local card_id1 = newcards[1]:getEffectiveId()
 	local card_id2 = newcards[2]:getEffectiveId()
@@ -1813,7 +1813,9 @@ function SmartAI:useCardDuel(duel, use)
 
 	local enemies = self:exclude(self.enemies, duel)
 	local friends = self:exclude(self.friends_noself, duel)
+	duel:setFlags("AI_Using")
 	local n1 = self:getCardsNum("Slash")
+	duel:setFlags("-AI_Using")
 	if self.player:hasSkill("wushuang") or use.isWuqian then
 		n1 = n1 * 2
 	end
@@ -2177,7 +2179,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		enemies = self:exclude(enemies, card)
 		local temp = {}
 		for _, enemy in ipairs(enemies) do
-			if enemy:hasSkill("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
+			if enemy:hasSkills("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
 			if self:hasTrickEffective(card, enemy) or isYinling then
 				table.insert(temp, enemy)
 			end
@@ -2189,7 +2191,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		enemies = self:exclude(self.enemies, card)
 		local temp = {}
 		for _, enemy in ipairs(enemies) do
-			if enemy:hasSkill("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
+			if enemy:hasSkills("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
 			if self:hasTrickEffective(card, enemy) or isYinling then
 				table.insert(temp, enemy)
 			end
@@ -2202,7 +2204,8 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		local dummyuse = { isDummy = true, to = sgs.SPlayerList() }
 		self:useCardSlash(sgs.Sanguosha:cloneCard("slash"), dummyuse)
 		if not dummyuse.to:isEmpty() then
-			for _, to in sgs.qlist(dummyuse.to) do
+			local tos = self:exclude(dummyuse.to, card)
+			for _, to in ipairs(tos) do
 				if to:getHandcardNum() == 1 and to:getHp() <= 2 and self:hasLoseHandcardEffective(to) and not to:hasSkills("kongcheng|tianming")
 					and (not self:hasEightDiagramEffect(to) or IgnoreArmor(self.player, to)) then
 					if addTarget(to, to:getRandomHandCardId()) then return end
@@ -2465,6 +2468,13 @@ sgs.ai_choicemade_filter.cardChosen.snatch = function(self, player, promptlist)
 				else
 					intention = 0
 				end
+			end
+			if promptlist[2] == "snatch" and (card:isKindOf("OffensiveHorse") or card:isKindOf("Weapon")) and self:isFriend(from, to) then
+				local canAttack
+				for _, p in sgs.qlist(self.room:getOtherPlayers(from)) do
+					if from:inMyAttackRange(p) and self:isEnemy(p, from) then canAttack = true break end
+				end
+				if not canAttack then intention = 0 end
 			end
 		elseif place == sgs.Player_PlaceHand then
 			if self:needKongcheng(to, true) and to:getHandcardNum() == 1 then
@@ -2823,6 +2833,8 @@ function SmartAI:useCardIndulgence(card, use)
 		if enemy:hasSkill("conghui") then value = value - 20 end
 		if self:needBear(enemy) then value = value - 20 end
 		if not sgs.isGoodTarget(enemy, self.enemies, self) then value = value - 1 end
+		if getKnownCard(enemy, self.player, "Dismantlement", true) > 0 then value = value + 2 end
+		value = value + (self.room:alivePlayerCount() - self:playerGetRound(enemy)) / 2
 		return value
 	end
 

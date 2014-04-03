@@ -979,6 +979,11 @@ sgs.ai_skill_discard.fencheng = function(self, discard_num, min_num, optional, i
 	if self:isGoodChainTarget(self.player, liru) or self:getDamagedEffects(self.player, liru) or self:needToLoseHp(self.player, liru) then return {} end
 	local to_discard = self:askForDiscard("dummyreason", discard_num, min_num, false, include_equip)
 	if #to_discard < discard_num then return {} end
+	for _, id in ipairs(to_discard) do
+		if isCard("Peach", sgs.Sanguosha:getCard(id), self.player) then return {}
+		elseif 1 == self.player:getHp() and isCard("Analeptic", sgs.Sanguosha:getCard(id), self.player) then return {}
+		end
+	end
 	if not juece_effect then return to_discard
 	else
 		if self.player:isKongcheng() then return to_discard end

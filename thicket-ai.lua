@@ -215,6 +215,10 @@ sgs.ai_skill_choice.yinghun = function(self, choices)
 end
 
 sgs.ai_skill_playerchosen.yinghun = function(self, targets)
+	if self.player:hasFlag("AI_doNotInvoke_yinghun") then
+		self.player:setFlags("-AI_doNotInvoke_yinghun")
+		return
+	end
 	local x = self.player:getLostHp()
 	local n = x - 1
 	self:updatePlayers()

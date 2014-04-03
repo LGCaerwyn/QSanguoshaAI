@@ -183,6 +183,8 @@ end
 
 sgs.kofxiaoji_keep_value = sgs.xiaoji_keep_value
 
+sgs.ai_cardneed.kofxiaoji = sgs.ai_cardneed.equip
+
 sgs.ai_skill_invoke.suzi = true
 sgs.ai_skill_invoke.cangji = true
 
@@ -269,7 +271,7 @@ sgs.ai_skill_use_func.MouzhuCard = function(card, use, self)
 	if self.player:hasSkill("leiji") and self:findLeijiTarget(self.player, 51) and self:hasSuit("spade", true) then
 		canleiji = true
 		self:sort(self.friends_noself, "handcard")
-		sgs.reverse(self.friends_noself)
+		self.friends_noself = sgs.reverse(self.friends_noself)
 		for _, friend in ipairs(self.friends_noself) do
 			if not friend:isKongcheng() and friend:getHandcardNum() < self.player:getHandcardNum() + 2
 				and (self:getCardsNum("Jink") > 0 or not IgnoreArmor(friend, self.player) and not self:isWeak() and self:hasEightDiagramEffect()) then
