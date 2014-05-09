@@ -548,7 +548,7 @@ sgs.ai_skill_use["@@fangquan"] = function(self, prompt)
 	self:sortByKeepValue(cards)
 	if sgs.current_mode_players.rebel == 0 then
 		local lord = self.room:getLord()
-		if lord and self:isFriend(lord) then
+		if lord and self:isFriend(lord) and lord:objectName() ~= self.player:objectName() then
 			return "@FangquanCard=" .. cards[1]:getEffectiveId() .. "->" .. lord:objectName()
 		end
 	end
