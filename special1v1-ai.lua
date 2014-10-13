@@ -29,6 +29,7 @@ function SmartAI:useCardDrowning(card, use)
 	end
 	if #targets > 0 then
 		local targets_num = 1 + sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, card)
+		if use.isDummy and use.extra_target then targets_num = targets_num + use.extra_target end
 		local lx = self.room:findPlayerBySkillName("huangen")
 		use.card = card
 		if use.to then

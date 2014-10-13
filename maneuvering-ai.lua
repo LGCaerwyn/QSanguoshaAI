@@ -764,6 +764,7 @@ function SmartAI:useCardFireAttack(fire_attack, use)
 		end
 
 		local targets_num = 1 + sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, fire_attack)
+		if use.isDummy and use.extra_target then targets_num = targets_num + use.extra_target end
 		local lx = self.room:findPlayerBySkillName("huangen")
 		use.card = fire_attack
 		for i = 1, #targets, 1 do

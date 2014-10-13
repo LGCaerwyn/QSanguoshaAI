@@ -681,6 +681,14 @@ function sgs.ai_skill_choice.shenjun(self, choices)
 	if self.player:getSeat() < self.room:alivePlayerCount()/2 then gender = not gender end
 	if gender then return "male" else return "female" end
 end
+
+function sgs.ai_slash_prohibit.shenjun(self, from, to, card)
+	if from:hasSkill("jueqing") then return false end --绝情返回false
+	if from:hasSkill("nosqianxi") and from:distanceTo(to) == 1 then return false end --潜袭返回false
+	if from:getGender() == to:getGender() then return true end --性别相同返回true
+	if not card:isKindOf("ThunderSlash") then return true end --不是雷杀的返回true
+	return false --统一返回false
+end
 --[[
 	技能：烧营
 	描述：当你对一名不处于连环状态的角色造成一次火焰伤害时，你可选择一名其距离为1的另外一名角色并进行一次判定：若判定结果为红色，则你对选择的角色造成一点火焰伤害

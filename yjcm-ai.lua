@@ -325,27 +325,26 @@ sgs.ai_playerchosen_intention.xuanhuo_slash = 80
 
 sgs.ai_skill_cardask["xuanhuo-slash"] = function(self, data, pattern, t1, t2, prompt)
 	local parsedPrompt = prompt:split(":")
-	local target, target2
+	local fazheng, victim
 	for _, p in sgs.qlist(self.room:getAlivePlayers()) do
-		if p:objectName() == parsedPrompt[2] then target = p end
-		if p:objectName() == parsedPrompt[3] then target2 = p end
+		if p:objectName() == parsedPrompt[2] then fazheng = p end
+		if p:objectName() == parsedPrompt[3] then victim = p end
 	end
-	if not target or not target2 then self.room:writeToConsole(debug.traceback()) return "." end
-	local fazheng = self.player:getRoom():getCurrent()
-	if target and target2 then
+	if not fazheng or not victim then self.room:writeToConsole(debug.traceback()) return "." end
+	if fazheng and victim then
 		for _, slash in ipairs(self:getCards("Slash")) do
-			if self:isFriend(target2) and self:slashIsEffective(slash, target2) then
-				if self:needLeiji(target2, self.player) then return slash:toString() end
-				if self:getDamagedEffects(target2, self.player) then return slash:toString() end
-				if not self:isFriend(fazheng) and self:needToLoseHp(target2, self.player) then return slash:toString() end
+			if self:isFriend(victim) and self:slashIsEffective(slash, victim) then
+				if self:needLeiji(victim, self.player) then return slash:toString() end
+				if self:getDamagedEffects(victim, self.player) then return slash:toString() end
+				if not self:isFriend(fazheng) and self:needToLoseHp(victim, self.player) then return slash:toString() end
 			end
 
-			if self:isFriend(target2) and not self:isFriend(fazheng) and not self:slashIsEffective(slash, target2) then
+			if self:isFriend(victim) and not self:isFriend(fazheng) and not self:slashIsEffective(slash, victim) then
 				return slash:toString()
 			end
 
-			if self:isEnemy(target2) and self:slashIsEffective(slash, target2)
-				and not self:getDamagedEffects(target2, self.player, true) and not self:needLeiji(target2, self.player) then
+			if self:isEnemy(victim) and self:slashIsEffective(slash, victim)
+				and not self:getDamagedEffects(victim, self.player, true) and not self:needLeiji(victim, self.player) then
 					return slash:toString()
 			end
 		end
@@ -353,17 +352,17 @@ sgs.ai_skill_cardask["xuanhuo-slash"] = function(self, data, pattern, t1, t2, pr
 		if self:hasSkills(sgs.lose_equip_skill) and not self.player:getEquips():isEmpty() and not self.player:hasSkill("manjuan") then return "." end
 
 		for _, slash in ipairs(self:getCards("Slash")) do
-			if self:isFriend(target2) and not self:isFriend(fazheng) then
-				if (target2:getHp() > 3 or not self:canHit(target2, self.player, self:hasHeavySlashDamage(self.player, slash, target2)))
-					and target2:getRole() ~= "lord" then
+			if self:isFriend(victim) and not self:isFriend(fazheng) then
+				if (victim:getHp() > 3 or not self:canHit(victim, self.player, self:hasHeavySlashDamage(self.player, slash, victim)))
+					and victim:getRole() ~= "lord" then
 						return slash:toString()
 				end
-				if self:needToLoseHp(target2, self.player) then return slash:toString() end
+				if self:needToLoseHp(victim, self.player) then return slash:toString() end
 			end
 
-			if not self:isFriend(target2) and not self:isFriend(fazheng) then
-				if not self:needLeiji(target2, self.player) then return slash:toString() end
-				if not self:slashIsEffective(slash, target2) then return slash:toString() end
+			if not self:isFriend(victim) and not self:isFriend(fazheng) then
+				if not self:needLeiji(victim, self.player) then return slash:toString() end
+				if not self:slashIsEffective(slash, victim) then return slash:toString() end
 			end
 		end
 	end

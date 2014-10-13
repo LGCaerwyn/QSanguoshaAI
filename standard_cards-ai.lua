@@ -442,7 +442,7 @@ function SmartAI:isPriorFriendOfSlash(friend, card, source)
 				or (friend:isLord() and source:hasSkill("guagu") and friend:getLostHp() >= 1 and getCardsNum("Jink", friend, source) == 0)
 				or (friend:hasSkill("jieming") and source:hasSkill("nosrende") and (huatuo and self:isFriend(huatuo, source)))
 				or (friend:hasSkill("hunzi") and friend:getHp() == 2 and self:getDamagedEffects(friend, source)))
-				or self:hasQiuyuanEffect(source, friend)
+				or self:hasQiuyuanEffect(source, friend) --or self:hasNosQiuyuanEffect(source, friend)
 				then
 		return true
 	end
@@ -1903,6 +1903,7 @@ function SmartAI:useCardDuel(duel, use)
 
 		local targets_num = 1 + sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, duel)
 		if use.isDummy and use.xiechan then targets_num = 100 end
+		if use.isDummy and use.extra_target then targets_num = targets_num + use.extra_target end
 		local enemySlash = 0
 		local setFlag = false
 		local lx = self.room:findPlayerBySkillName("huangen")
@@ -2110,18 +2111,19 @@ function SmartAI:getValuableCard(who)
 end
 
 function SmartAI:useCardSnatchOrDismantlement(card, use)
-	local isYinling = card:isKindOf("YinlingCard")
+	local isSkillCard = card:isKindOf("YinlingCard") or card:isKindOf("DanshouCard")
 	local isJixi = card:getSkillName() == "jixi"
 	local isDiscard = (not card:isKindOf("Snatch"))
-	local name = isYinling and "yinling" or card:objectName()
+	local name = card:isKindOf("YinlingCard") and "yinling" or card:isKindOf("DanshouCard") and "danshou" or card:objectName()
 	local using_2013 = (name == "dismantlement") and self.room:getMode() == "02_1v1" and sgs.GetConfig("1v1/Rule", "Classical") ~= "Classical"
-	if not isYinling and self.player:hasSkill("noswuyan") then return end
+	if not isSkillCard and self.player:hasSkill("noswuyan") then return end
 	local players = self.room:getOtherPlayers(self.player)
 	local tricks
 	local usecard = false
 
 	local targets = {}
-	local targets_num = isYinling and 1 or (1 + sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, card))
+	local targets_num = isSkillCard and 1 or (1 + sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, card))
+	if use.isDummy and use.extra_target then targets_num = targets_num + use.extra_target end
 	local lx = self.room:findPlayerBySkillName("huangen")
 
 	local addTarget = function(player, cardid)
@@ -2147,7 +2149,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 	end
 
 	players = self:exclude(players, card)
-	if not isYinling and not using_2013 then
+	if not isSkillCard and not using_2013 then
 		for _, player in ipairs(players) do
 			if not player:getJudgingArea():isEmpty() and self:hasTrickEffective(card, player)
 				and ((player:containsTrick("lightning") and self:getFinalRetrial(player) == 2) or #self.enemies == 0) then
@@ -2182,7 +2184,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		local temp = {}
 		for _, enemy in ipairs(enemies) do
 			if enemy:hasSkills("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
-			if self:hasTrickEffective(card, enemy) or isYinling then
+			if self:hasTrickEffective(card, enemy) or isSkillCard then
 				table.insert(temp, enemy)
 			end
 		end
@@ -2194,7 +2196,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		local temp = {}
 		for _, enemy in ipairs(enemies) do
 			if enemy:hasSkills("tuntian+guidao") and enemy:hasSkills("zaoxian|jixi|zhiliang|leiji|nosleiji") then continue end
-			if self:hasTrickEffective(card, enemy) or isYinling then
+			if self:hasTrickEffective(card, enemy) or isSkillCard then
 				table.insert(temp, enemy)
 			end
 		end
@@ -2227,7 +2229,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 
 	self:sort(self.friends_noself, "defense")
 	local friends = self:exclude(self.friends_noself, card)
-	if not isYinling and not using_2013 then
+	if not isSkillCard and not using_2013 then
 		for _, friend in ipairs(friends) do
 			if (friend:containsTrick("indulgence") or friend:containsTrick("supply_shortage")) and not friend:containsTrick("YanxiaoCard")
 				and self:hasTrickEffective(card, friend) then
@@ -2258,7 +2260,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 
 	local hasLion, target
 	for _, friend in ipairs(friends) do
-		if (self:hasTrickEffective(card, friend) or isYinling) and self:needToThrowArmor(friend) and (not isDiscard or self.player:canDiscard(friend, friend:getArmor():getEffectiveId())) then
+		if (self:hasTrickEffective(card, friend) or isSkillCard) and self:needToThrowArmor(friend) and (not isDiscard or self.player:canDiscard(friend, friend:getArmor():getEffectiveId())) then
 			hasLion = true
 			target = friend
 		end
@@ -2279,7 +2281,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 	end
 	table.sort(new_enemies, compare_JudgingArea)
 	local yanxiao_card, yanxiao_target, yanxiao_prior
-	if not isYinling and not using_2013 then
+	if not isSkillCard and not using_2013 then
 		for _, enemy in ipairs(new_enemies) do
 			for _, acard in sgs.qlist(enemy:getJudgingArea()) do
 				if acard:isKindOf("YanxiaoCard") and (not isDiscard or self.player:canDiscard(enemy, acard:getId())) then
@@ -2377,7 +2379,7 @@ function SmartAI:useCardSnatchOrDismantlement(card, use)
 		if addTarget(target, target:getArmor():getEffectiveId()) then return end
 	end
 
-	if not isYinling and not using_2013
+	if not isSkillCard and not using_2013
 		and yanxiao_card and yanxiao_target and (not isDiscard or self.player:canDiscard(yanxiao_target, yanxiao_card:getId())) then
 		if addTarget(yanxiao_target, yanxiao_card:getEffectiveId()) then return end
 	end
@@ -2528,7 +2530,7 @@ function SmartAI:useCardCollateral(card, use)
 				and friend:getWeapon() and friend:getWeapon():isKindOf("Crossbow") and self:hasTrickEffective(card, friend) then
 				for _, enemy in ipairs(toList) do
 					if friend:canSlash(enemy, nil) and friend:objectName() ~= enemy:objectName() then
-						self.room:setPlayerFlag(self.player, "needCrossbow")
+						if not use.isDummy then self.room:setPlayerFlag(self.player, "needCrossbow") end
 						use.card = card
 						if use.to then use.to:append(friend) end
 						if use.to then use.to:append(enemy) end
@@ -2656,10 +2658,9 @@ sgs.ai_skill_cardask["collateral-slash"] = function(self, data, pattern, target2
 	-- self.player = killer
 	-- target = user
 	-- target2 = victim
-	local current = self.room:getCurrent()
-	if self:isFriend(current) and (current:hasFlag("needCrossbow") or
-			(getCardsNum("Slash", current, self.player) >= 2 and self.player:getWeapon():isKindOf("Crossbow"))) then
-		if current:hasFlag("needCrossbow") then self.room:setPlayerFlag(current, "-needCrossbow") end
+	if self:isFriend(target) and (target:hasFlag("needCrossbow") or
+			(getCardsNum("Slash", target, self.player) >= 2 and self.player:getWeapon():isKindOf("Crossbow"))) then
+		if target:hasFlag("needCrossbow") then self.room:setPlayerFlag(target, "-needCrossbow") end
 		return "."
 	end
 
