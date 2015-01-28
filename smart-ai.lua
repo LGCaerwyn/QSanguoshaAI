@@ -732,6 +732,11 @@ function SmartAI:adjustUsePriority(card, v)
 	end
 	if self.player:hasSkill("mingzhe") and card:isRed() then v = v + (self.player:getPhase() ~= sgs.Player_NotActive and 0.05 or -0.05) end
 
+	if card:isBlack() and (card:isKindOf("Slash") or card:isNDTrick()) and self.player:hasSkill("zenhui") and not self.player:hasFlag("zenhui")
+		and sgs.Sanguosha:correctCardTarget(sgs.TargetModSkill_ExtraTarget, self.player, card) == 0 then
+		v = v + 0.1
+	end
+
 	local suits_value = {}
 	for index, suit in ipairs(suits) do
 		suits_value[suit] = -index
@@ -6137,22 +6142,26 @@ function SmartAI:findPlayerToDiscard(flags, include_self, isDiscard, players, re
 	end
 end
 
-function SmartAI:findPlayerToDraw(include_self, drawnum)
+function SmartAI:findPlayerToDraw(include_self, drawnum, count)
 	drawnum = drawnum or 1
 	local players = sgs.QList2Table(include_self and self.room:getAllPlayers() or self.room:getOtherPlayers(self.player))
 	local friends = {}
+	local player_list = sgs.SPlayerList()
 	for _, player in ipairs(players) do
 		if self:isFriend(player) and not hasManjuanEffect(player)
 			and not (player:hasSkill("kongcheng") and player:isKongcheng() and drawnum <= 2) then
 			table.insert(friends, player)
 		end
 	end
-	if #friends == 0 then return end
+	if #friends == 0 then return {} end
 
 	self:sort(friends, "defense")
 	for _, friend in ipairs(friends) do
 		if friend:getHandcardNum() < 2 and not self:needKongcheng(friend) and not self:willSkipPlayPhase(friend) then
-			return friend
+			if count then
+				if not player_list:contains(friend) then player_list:append(friend) end
+				if count == player_list:length() then return sgs.QList2Table(player_list) end
+			else return friend end
 		end
 	end
 
@@ -6160,23 +6169,33 @@ function SmartAI:findPlayerToDraw(include_self, drawnum)
 	if AssistTarget and not self:willSkipPlayPhase(AssistTarget) and (AssistTarget:getHandcardNum() < AssistTarget:getMaxCard() * 2 or AssistTarget:getHandcardNum() < self.player:getHandcardNum())then
 		for _, friend in ipairs(friends) do
 			if friend:objectName() == AssistTarget:objectName() and not self:willSkipPlayPhase(friend) then
-				return friend
+				if count then
+					if not player_list:contains(friend) then player_list:append(friend) end
+					if count == player_list:length() then return sgs.QList2Table(player_list) end
+				else return friend end
 			end
 		end
 	end
 
 	for _, friend in ipairs(friends) do
 		if self:hasSkills(sgs.cardneed_skill, friend) and not self:willSkipPlayPhase(friend) then
-			return friend
+			if count then
+				if not player_list:contains(friend) then player_list:append(friend) end
+				if count == player_list:length() then return sgs.QList2Table(player_list) end
+			else return friend end
 		end
 	end
 
 	self:sort(friends, "handcard")
 	for _, friend in ipairs(friends) do
 		if not self:needKongcheng(friend) and not self:willSkipPlayPhase(friend) then
-			return friend
+			if count then
+				if not player_list:contains(friend)  then player_list:append(friend) end
+				if count == player_list:length() then return sgs.QList2Table(player_list) end
+			else return friend end
 		end
 	end
+	if count then return sgs.QList2Table(player_list) end
 	return nil
 end
 

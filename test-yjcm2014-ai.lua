@@ -80,6 +80,7 @@ sgs.ai_skill_use["@@shenduan"] = function(self)
 	local ids = self.player:property("shenduan"):toString():split("+")
 	for _, id in ipairs(ids) do
 		local card = sgs.Sanguosha:getCard(id)
+		if self.player:isCardLimited(card, sgs.Card_MethodUse) then continue end
 		local card_str = ("supply_shortage:shenduan[%s:%s]=%d"):format(card:getSuitString(), card:getNumberString(), id)
 		local ss = sgs.Card_Parse(card_str)
 		local dummy_use = { isDummy = true , to = sgs.SPlayerList() }
@@ -114,6 +115,10 @@ sgs.ai_skill_invoke.yonglve = function(self)
 		end
 	end
 	return false
+end
+
+sgs.ai_skill_invoke.qiangzhi = function(self)
+	return not self:needKongcheng(self.player, true)
 end
 
 sgs.ai_skill_playerchosen.qiangzhi = function(self, targetlist)
@@ -705,7 +710,7 @@ sgs.ai_card_intention.XianzhouDamageCard = function(self, card, from, tos)
 end
 
 sgs.ai_skill_invoke.jianying = function(self)
-	if self:needKongcheng(self.player, true) then return false end
+	return not self:needKongcheng(self.player, true)
 end
 
 sgs.ai_skill_playerchosen.youdi = function(self, targets)
